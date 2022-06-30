@@ -100,22 +100,24 @@ class Operators:
         # normalized primed basis vectors
         pp = ['\\hat{\\mathbf{e_' + sy.latex(k) + '}}' for k in self.coords_p]
         self.Zp = sy.Matrix(sy.symbols(pp))
+
+        # symbolic Laplacian operator
+        self._Laplacian = sy.symbols('\\nabla^{2}', cls=sy.Function)
         
-        # generic scalar field
-        F = sy.symbols('F', cls=sy.Function, real=True)
-        self.F = F(*self.coords_p)
-        
-        # generic vector field
-        pp = ['V_' + sy.latex(k) for k in self.coords_p]
+    def _scalar_field(self, F='F'):
+        # create a generic scalard field with symbol 
+        f = sy.symbols(F, cls=sy.Function, real=True)
+        return f(*self.coords_p)
+ 
+    def _vector_field(self, V='V'):
+        # create a generic vector field with symbol V
+        pp = [V + '_' + sy.latex(k) for k in self.coords_p]
         ss = []
         for k in pp:
             val = sy.symbols(k, cls=sy.Function, real=True)
             val = val(*self.coords_p)
             ss.append(val)
-        self.V = sy.Matrix(ss)
-        
-        # symbolic Laplacian operator
-        self._Laplacian = sy.symbols('\\nabla^{2}', cls=sy.Function)
+        return sy.Matrix(ss)
 
     def _create_operators(self):
         
@@ -172,7 +174,7 @@ class Operators:
         # F is a scalar field in the primed coordinates; default is a symbolic scalar field
         # vector: True to return an n-element vector, False to return a symbolic represenation with unit vectors
         if F is None:
-            F = self.F
+            F = self._scalar_field('f')
         V = sy.Matrix([F.diff(k) for k in self.coords_p])
         for j, k in enumerate(V):
             V[j] = k/self.metric_sqrt[j,j]
@@ -182,7 +184,7 @@ class Operators:
 
     def divergence(self, V=None):
         # V is a vector field in the primed coordinates; default is a symbolic vector field
-        if V is None: V = self.V
+        if V is None: V = self._vector_field('A')
         out = 0
         for j, k in enumerate(V):
             k   *= self.det_sqrt/self.metric_sqrt[j,j]
@@ -194,7 +196,7 @@ class Operators:
         # vector: True to return an n-element vector, False to return a symbolic represenation with unit vectors
         if (len(self.coords) != 3) or (len(self.coords_p) != 3):
             raise ValueError(f"curl() requires a 3D-to-3D mapping")
-        if V is None: V = self.V
+        if V is None: V = self._vector_field('A')
         indx = {0:[1,2], 1:[2,0], 2:[0,1]}  # Levi-Civita positive entries
         h    = self.metric_sqrt
         out = []
@@ -207,19 +209,37 @@ class Operators:
         if vector: return V
         return self.Zp.T * V
 
+    def material_derivative(self, A=None, B=None, vector=True):
+        # see https://en.wikipedia.org/wiki/Material_derivative
+        if A is None: A = self._vector_field('A')
+        if B is None: B = self._vector_field('B')
+        cp = self.coords_p
+        nn = len(cp)
+        h  = self.metric_sqrt
+        out = []
+        for j in range(nn):
+            val = 0
+            for i in range(nn):
+                val += A[i] * B[j].diff(cp[i]) / h[i,i] +\
+                       B[i] * (A[j] * h[j,j].diff(cp[i]) - A[i] * h[i,i].diff(cp[j])) / (h[i,i] * h[j,j])
+            out.append(val)
+        V = sy.expand(sy.Matrix(out))
+        if vector: return V
+        return self.Zp.T * V
+ 
     def Laplacian_scalar(self, F=None):
         # F is a scalar field in the primed coordinates; default is a symbolic scalar field
-        if F is None: F = self.F
+        if F is None: F = self._scalar_field('f')
         return sy.expand(sy.trigsimp(self.divergence(self.gradient(F, vector=True))))
     
     def Laplacian_vector_full(self, V=None): # use Arfken (1.80)
         # V is a vector field in the primed coordinates; default is a symbolic vector field
-        if V is None: V = self.V
+        if V is None: V = self._vector_field('A')
         return sy.expand(sy.trigsimp(self.gradient(self.divergence(V)) - self.curl(self.curl(V))))
     
     def Laplacian_vector_reduced(self, V=None):
         # V is a vector field in the primed coordinates; default is a symbolic vector field
-        if V is None: V = self.V
+        if V is None: V = self._vector_field('A')
         full = self.Laplacian_vector_full(V) # immutable matrix returned, can't modify
         out = []
         for j, k in enumerate(full):
