@@ -1,3 +1,27 @@
+'''
+MIT License
+
+Copyright (c) 2022 Warren E Smith
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+'''
+
 import sympy as sy
 import numpy as np
 import matplotlib.pyplot as plt
@@ -6,8 +30,9 @@ from   IPython.display import display, Math
 
 
 def undo_abs(obj): 
-    # remove abs value signs from trig functions: they cause problems with differentiation
-    # this just handles one multiplier level
+    # remove abs value signs from trig functions:
+    # they cause problems with differentiation;
+    # this handles one multiplier level
     if isinstance(obj, sy.Mul):
         val = 1
         for j, k in enumerate(obj.args):
@@ -36,46 +61,52 @@ class Operators:
     
     def __init__(self, orig_coords, primed_coords, orig_from_primed):
         '''
-        Generate the vector operators gradient, divergence, curl, Laplacian, in user-defined N-D coordinate transforms.
+        Generate the vector operators gradient, divergence, curl, Laplacian, etc.
+        from user-defined N-D coordinate transforms.
         
         Restrictions:
         - The original (unprimed) system must be Cartesian.
-        - The primed system must have a diagonal metric (ie, the primed basis must be orthogonal).
+        - The primed system must have a diagonal metric
+          (ie, the primed basis must be orthogonal).
         - The curl() operator is only calculated for 3D-to-3D coordinate transforms.
         
-        Vector components are assumed to be 'normal': ie, the contravariant/covariant distinction is not required, 
-        because normalization of the transformed vector bases is performed (eg, using the 'hi' terms of (1, 2), 
-        which are the square roots of the diagonals of the metric). See Weinberg (3) for a discussion of these coordinates. 
-        
-        orig_coords      : list or tuple of sympy Symbol objects created with sympy symbols() function;
-                           the original unprimed coordinates, must be Cartesian (ie, the metric is the identity matrix)
+        Vector components are assumed to be 'ordinary' (see Weinberg p. 109 for a discussion):
+        ie, the contravariant/covariant distinction is not required, because normalization
+        of the transformed vector bases is performed using the 'h_i' terms derived from
+        the metric (see Arfken chapter 2).
+
+        orig_coords      : list or tuple of sympy Symbol objects created with the
+                           sympy symbols() function;
+                           the original (unprimed) coordinates are Cartesian
+                           (ie, the metric for the unprimed coords is the identity matrix)
                            example: orig_coords = (x, y, z)
-        primed_coords    : list or tuple of sympy Symbol objects created with sympy symbols() function;
-                           the primed coordinates, with diagonal metric
+        primed_coords    : list or tuple of sympy Symbol objects created with the
+                           sympy symbols() function;
+                           the primed coordinates must be orthogonal: ie, they have a diagonal
+                           metric;
                            example: primed_coords = (rho, phi, z) for 3D cylindrical coordinates
-        orig_from_primed : list or tuple of dquations
+        orig_from_primed : list or tuple of equations:
                            the equations mapping the primed coords to the original coords;
                            example in 3D cylindrical coords: 
                            orig_from_primed = [rho*cos(phi), rho*sin(phi), z]
-        NOTE: do not use underscores (representing subset characters) in the symbol-definition step: 
-              symbols with underscores will clash with underscore symbol generation in _set_up_symbols() below.
+
+        NOTE: do not use underscores (representing subset characters) in the
+              symbol-definition step: symbols with underscores will clash with underscore
+              symbol generation in _set_up_symbols() below.
               for example: 
-              x0 = sympy.symbols('x0') is ok
+              x0 = sympy.symbols('x0')  is ok
               x0 = sympy.symbols('x_0') is NOT ok
         
-        See https://en.wikipedia.org/wiki/Del_in_cylindrical_and_spherical_coordinates to validate vector operators
+        Validataion of derived operator expressions was performed in part using
+        Arfken and link (a).
         
         Refs
-        1) Arfken, George: 'Mathematical Methods for Physicists', second edition (1970), section 2.2
-        2) Kreyszig xxx
-        2) Weinberg xxx
-        
-        TODO:
-        - fix problem in printing 3D Cartesian divergence and gradient(vector=False) case
-        - improve printing for the vector operators
-        - at present this assumes diagonal metrics for vector-operator calcs (as per Arfken/Weinberg developments)
-          - at a future date, generalize to non-diagonal metrics
-        '''
+          Arfken,   George: 'Mathematical Methods for Physicists', second edition (1970)
+          Weinberg, Steven: 'Gravitation and Cosmology', (1972)
+          (a) https://en.wikipedia.org/wiki/
+              Del_in_cylindrical_and_spherical_coordinates to validate vector operators
+
+       '''
         self.coords    = orig_coords
         self.coords_p  = primed_coords
         self.transform = orig_from_primed
@@ -105,12 +136,12 @@ class Operators:
         self._Laplacian = sy.symbols('\\nabla^{2}', cls=sy.Function)
         
     def _scalar_field(self, F='F'):
-        # create a generic scalard field with symbol 
+        # create a generic scalar field with user-defined symbol F
         f = sy.symbols(F, cls=sy.Function, real=True)
         return f(*self.coords_p)
  
     def _vector_field(self, V='V'):
-        # create a generic vector field with symbol V
+        # create a generic vector field with user-defined symbol V
         pp = [V + '_' + sy.latex(k) for k in self.coords_p]
         ss = []
         for k in pp:
@@ -130,7 +161,7 @@ class Operators:
         self._det             = self._metric.det()
         self._det_sqrt        = undo_abs(sy.sqrt(self._det))
         self._metric_inv      = self._metric.inv()
-        self._metric_inv_sqrt = self._metric_sqrt.inv() # doing ops in this order works for diagonal metric only(?)
+        self._metric_inv_sqrt = self._metric_sqrt.inv()
 
     @property
     def Jacobian(self):
@@ -158,10 +189,11 @@ class Operators:
         return self._metric_inv_sqrt
     @property
     def primed_basis(self):
-        # transpose needed since tensor sum is over rows: see 6/12/22 handwritten;
-        # need to normalize columns of Jacobian to get unit primed basis: using sqrt of metric inverse
-        # (assuming diagonal metrics in this calculation)
-        # i.e., the diagonals of the metric are the squared lengths of the unnormalized primed basis
+        # transpose needed since tensor sum is over rows;
+        # normalize columns of Jacobian to get unit primed basis;
+        # (diagonal metrics are assumed throughout)
+        # note: the diagonals of the metric are the squared lengths of the
+        #       unnormalized primed basis
         M = self._J * self.metric_inv_sqrt
         return M.T * self.Z
 
@@ -171,8 +203,10 @@ class Operators:
         return self._Laplacian(coords)
     
     def gradient(self, F=None, vector=True):
-        # F is a scalar field in the primed coordinates; default is a symbolic scalar field
-        # vector: True to return an n-element vector, False to return a symbolic represenation with unit vectors
+        # F is a scalar field in the primed coordinates;
+        # default is a symbolic scalar field
+        # vector: True to return an n-element vector,
+        #         False to return a symbolic represenation with unit bases
         if F is None:
             F = self._scalar_field('f')
         V = sy.Matrix([F.diff(k) for k in self.coords_p])
@@ -183,7 +217,8 @@ class Operators:
         return self.Zp.T * V
 
     def divergence(self, V=None):
-        # V is a vector field in the primed coordinates; default is a symbolic vector field
+        # V is a vector field in the primed coordinates;
+        # default is a symbolic vector field
         if V is None: V = self._vector_field('A')
         out = 0
         for j, k in enumerate(V):
@@ -192,8 +227,10 @@ class Operators:
         return sy.expand(out)
 
     def curl(self, V=None, vector=True):
-        # V is a vector field in the primed coordinates; default is a symbolic vector field
-        # vector: True to return an n-element vector, False to return a symbolic represenation with unit vectors
+        # V is a vector field in the primed coordinates;
+        # default is a symbolic vector field
+        # vector: True to return an n-element vector,
+        #         False to return a symbolic represenation with unit bases
         if (len(self.coords) != 3) or (len(self.coords_p) != 3):
             raise ValueError(f"curl() requires a 3D-to-3D mapping")
         if V is None: V = self._vector_field('A')
@@ -221,24 +258,28 @@ class Operators:
             val = 0
             for i in range(nn):
                 val += A[i] * B[j].diff(cp[i]) / h[i,i] +\
-                       B[i] * (A[j] * h[j,j].diff(cp[i]) - A[i] * h[i,i].diff(cp[j])) / (h[i,i] * h[j,j])
+                       B[i] * (A[j] * h[j,j].diff(cp[i]) -\
+                               A[i] * h[i,i].diff(cp[j])) / (h[i,i] * h[j,j])
             out.append(val)
         V = sy.expand(sy.Matrix(out))
         if vector: return V
         return self.Zp.T * V
  
     def Laplacian_scalar(self, F=None):
-        # F is a scalar field in the primed coordinates; default is a symbolic scalar field
+        # F is a scalar field in the primed coordinates;
+        # default is a symbolic scalar field
         if F is None: F = self._scalar_field('f')
         return sy.expand(sy.trigsimp(self.divergence(self.gradient(F, vector=True))))
     
     def Laplacian_vector_full(self, V=None): # use Arfken (1.80)
-        # V is a vector field in the primed coordinates; default is a symbolic vector field
+        # V is a vector field in the primed coordinates;
+        # default is a symbolic vector field
         if V is None: V = self._vector_field('A')
         return sy.expand(sy.trigsimp(self.gradient(self.divergence(V)) - self.curl(self.curl(V))))
     
     def Laplacian_vector_reduced(self, V=None):
-        # V is a vector field in the primed coordinates; default is a symbolic vector field
+        # V is a vector field in the primed coordinates;
+        # default is a symbolic vector field
         if V is None: V = self._vector_field('A')
         full = self.Laplacian_vector_full(V) # immutable matrix returned, can't modify
         out = []
@@ -246,7 +287,7 @@ class Operators:
             out.append(self.Laplacian_symbolic(V[j]) + k - self.Laplacian_scalar(V[j]))
         return sy.expand(sy.trigsimp(sy.Matrix(out)))
 
-    # TODO: need to double-check this for correctness
+    # TODO: further validate with examples
     def vec_components_and_length(self, vec):
         vp =  self._J_inv * vec
         dd = [(j, k) for j, k in zip(self.coords, self.transform)]
