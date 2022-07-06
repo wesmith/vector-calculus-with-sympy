@@ -59,7 +59,7 @@ def pp(val):  # WS version of pretty-print
 
 class Operators:
     
-    def __init__(self, orig_coords, primed_coords, orig_from_primed):
+    def __init__(self, data):
         '''
         Generate the vector operators gradient, divergence, curl, Laplacian, etc.
         from user-defined N-D coordinate transforms.
@@ -74,21 +74,24 @@ class Operators:
         ie, the contravariant/covariant distinction is not required, because normalization
         of the transformed vector bases is performed using the 'h_i' terms derived from
         the metric (see Arfken chapter 2).
+        
+        data             : dictionary with keys 'original', 'primed', 'primed_to_orig'
+                           (see convenience class Coords below for common examples)
 
-        orig_coords      : list or tuple of sympy Symbol objects created with the
+        'original' value : list or tuple of sympy Symbol objects created with the
                            sympy symbols() function;
                            the original (unprimed) coordinates are Cartesian
                            (ie, the metric for the unprimed coords is the identity matrix)
                            example: orig_coords = (x, y, z)
-        primed_coords    : list or tuple of sympy Symbol objects created with the
+        'primed' value   : list or tuple of sympy Symbol objects created with the
                            sympy symbols() function;
                            the primed coordinates must be orthogonal: ie, they have a diagonal
                            metric;
                            example: primed_coords = (rho, phi, z) for 3D cylindrical coordinates
-        orig_from_primed : list or tuple of equations:
-                           the equations mapping the primed coords to the original coords;
-                           example in 3D cylindrical coords: 
-                           orig_from_primed = [rho*cos(phi), rho*sin(phi), z]
+        'primed_to_orig' value : list or tuple of equations:
+                                 the equations mapping the primed coords to the original coords;
+                                 example in 3D cylindrical coords: 
+                                 'primed_to_orig': (rho*cos(phi), rho*sin(phi), z)
 
         NOTE: do not use underscores (representing subset characters) in the
               symbol-definition step: symbols with underscores will clash with underscore
@@ -107,9 +110,9 @@ class Operators:
               Del_in_cylindrical_and_spherical_coordinates to validate vector operators
 
        '''
-        self.coords    = orig_coords
-        self.coords_p  = primed_coords
-        self.transform = orig_from_primed
+        self.coords    = data['original']
+        self.coords_p  = data['primed']
+        self.transform = data['primed_to_orig']
         self._set_up_symbols()
         self._create_operators()
         
@@ -295,3 +298,52 @@ class Operators:
         ll = vp.T * self._metric * vp
         orig_length = vec.T * vec  # assuming original system is Cartesian
         return vp, ll, orig_length
+
+    
+class Coords():
+    
+    def __init__(self):
+        
+        '''
+        A convenience class to define common coordinate transforms for the Operators class.
+        '''
+        self._spherical   = None
+        self._cylindrical = None
+        self._cartesian   = None
+        
+    @property
+    def spherical(self):
+        if self._spherical is not None: return self._spherical
+        # specifying positive and real variables may help in expression simplifications
+        x, y, z         = sy.symbols('x y z',        real=True)
+        r, theta, phi   = sy.symbols('r theta, phi', real=True, positive=True)
+        self._spherical = {'original': (x, y, z),
+                           'primed'  : (r, theta, phi),
+                           'primed_to_orig': (r * sin(theta) * cos(phi), 
+                                              r * sin(theta) * sin(phi), 
+                                              r * cos(theta))}
+        return self._spherical
+
+    @property
+    def cylindrical(self):
+        if self._cylindrical is not None: return self._cylindrical
+        x, y, z           = sy.symbols('x y z',   real=True)
+        rho, phi          = sy.symbols('rho phi', real=True, positive=True)
+        self._cylindrical = {'original': (x, y, z),
+                             'primed'  : (rho, phi, z),
+                             'primed_to_orig': (rho * cos(phi), rho * sin(phi), z)}
+        return self._cylindrical
+    
+    @property
+    def cartesian(self):
+        if self._cartesian is not None: return self._cartesian
+        x, y, z          = sy.symbols('x y z',      real=True)
+        Xp, Yp, Zp       = sy.symbols('Xp, Yp, Zp', real=True)
+        theta            = sy.symbols('theta',      real=True)
+        # NOTE: theta is a symbolic paramteter of the transform, NOT a coordinate
+        self._cartesian  = {'original': (x, y, z),
+                            'primed'  : (Xp, Yp, Zp),
+                            'primed_to_orig': (Xp * cos(theta) - Yp * sin(theta),
+                                               Xp * sin(theta) + Yp * cos(theta),
+                                               Zp)}
+        return self._cartesian
