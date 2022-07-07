@@ -113,6 +113,7 @@ class Operators:
         self.coords    = data['original']
         self.coords_p  = data['primed']
         self.transform = data['primed_to_orig']
+        self.name      = data['name']
         self._set_up_symbols()
         self._create_operators()
         
@@ -300,50 +301,42 @@ class Operators:
         return vp, ll, orig_length
 
     
-class Coords():
-    
-    def __init__(self):
+def coord_xforms():
         
-        '''
-        A convenience class to define common coordinate transforms for the Operators class.
-        '''
-        self._spherical   = None
-        self._cylindrical = None
-        self._cartesian   = None
-        
-    @property
-    def spherical(self):
-        if self._spherical is not None: return self._spherical
-        # specifying positive and real variables may help in expression simplifications
-        x, y, z         = sy.symbols('x y z',        real=True)
-        r, theta, phi   = sy.symbols('r theta, phi', real=True, positive=True)
-        self._spherical = {'original': (x, y, z),
-                           'primed'  : (r, theta, phi),
-                           'primed_to_orig': (r * sin(theta) * cos(phi), 
-                                              r * sin(theta) * sin(phi), 
-                                              r * cos(theta))}
-        return self._spherical
+    '''
+    A convenience function to define common coordinate transforms for the Operators class.
+    '''
+    out = {}
 
-    @property
-    def cylindrical(self):
-        if self._cylindrical is not None: return self._cylindrical
-        x, y, z           = sy.symbols('x y z',   real=True)
-        rho, phi          = sy.symbols('rho phi', real=True, positive=True)
-        self._cylindrical = {'original': (x, y, z),
-                             'primed'  : (rho, phi, z),
-                             'primed_to_orig': (rho * cos(phi), rho * sin(phi), z)}
-        return self._cylindrical
+    name = 'spherical_3d'
+    # specifying positive and real variables may help in expression simplifications
+    x, y, z         = sy.symbols('x y z',        real=True)
+    r, theta, phi   = sy.symbols('r theta, phi', real=True, positive=True)
+    out[name]       = {'original': (x, y, z),
+                       'primed'  : (r, theta, phi),
+                       'primed_to_orig': (r * sin(theta) * cos(phi), 
+                                          r * sin(theta) * sin(phi), 
+                                          r * cos(theta)),
+                       'name': name}
+
+    name = 'cylindrical_3d'
+    x, y, z           = sy.symbols('x y z',   real=True)
+    rho, phi          = sy.symbols('rho phi', real=True, positive=True)
+    out[name]         = {'original': (x, y, z),
+                         'primed'  : (rho, phi, z),
+                         'primed_to_orig': (rho * cos(phi), rho * sin(phi), z),
+                         'name': name}
+
+    name = 'cartesian_3d'
+    x, y, z          = sy.symbols('x y z',      real=True)
+    Xp, Yp, Zp       = sy.symbols('Xp, Yp, Zp', real=True)
+    theta            = sy.symbols('theta',      real=True)
+    # NOTE: theta is a symbolic paramteter of the transform, NOT a coordinate
+    out[name]        = {'original': (x, y, z),
+                        'primed'  : (Xp, Yp, Zp),
+                        'primed_to_orig': (Xp * cos(theta) - Yp * sin(theta),
+                                           Xp * sin(theta) + Yp * cos(theta),
+                                           Zp),
+                        'name': name}
     
-    @property
-    def cartesian(self):
-        if self._cartesian is not None: return self._cartesian
-        x, y, z          = sy.symbols('x y z',      real=True)
-        Xp, Yp, Zp       = sy.symbols('Xp, Yp, Zp', real=True)
-        theta            = sy.symbols('theta',      real=True)
-        # NOTE: theta is a symbolic paramteter of the transform, NOT a coordinate
-        self._cartesian  = {'original': (x, y, z),
-                            'primed'  : (Xp, Yp, Zp),
-                            'primed_to_orig': (Xp * cos(theta) - Yp * sin(theta),
-                                               Xp * sin(theta) + Yp * cos(theta),
-                                               Zp)}
-        return self._cartesian
+    return out
