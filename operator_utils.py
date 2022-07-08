@@ -338,5 +338,15 @@ def coord_xforms():
                                            Xp * sin(theta) + Yp * cos(theta),
                                            Zp),
                         'name': name}
-    
+
+    name = 'oblate_3d'
+    x, y, z          = sy.symbols('x y z',       real=True)
+    mu, nu, phi, a   = sy.symbols('mu nu phi a', real=True)
+    # NOTE: 'a' is a symbolic parameter and NOT a coordinate
+    out[name]        = {'original': (x, y, z),
+                        'primed'  : (mu, nu, phi),
+                        'primed_to_orig': (a * sy.cosh(mu) * cos(nu) * cos(phi),
+                                           a * sy.cosh(mu) * cos(nu) * sin(phi),
+                                           a * sy.sinh(mu) * sin(nu)),
+                        'name': name}
     return out
