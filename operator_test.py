@@ -28,11 +28,16 @@ aa = ws.coord_xforms()
 
 def test_for_zero(data):
     dd = ws.Operators(data)
-    if dd.divergence(dd.curl()) != 0: print('div(curl) test failed by {}'.format(dd.name))
-    #assert dd.divergence(dd.curl()) == 0, 'div(curl) test failed by {}'.format(dd.name)
-    if not dd.curl(dd.gradient())._eval_is_zero_matrix(): print('curl(grad) test failed by {}'.format(dd.name))
-    #assert dd.curl(dd.gradient())._eval_is_zero_matrix(), 'curl(grad) test failed by {}'.format(dd.name)
-    #print('"div(curl) and curl(grad)" tests passed by: {}'.format(dd.name))
+
+    if dd.divergence(dd.curl()) != 0:
+        print('** FAILED ** div(curl) test for {}'.format(dd.name))
+    else:
+        print('-- passed -- div(curl) test for {}'.format(dd.name))
+
+    if not dd.curl(dd.gradient())._eval_is_zero_matrix():
+        print('** FAILED ** curl(grad) test for {}'.format(dd.name))
+    else:
+        print('-- passed -- curl(grad) test for {}'.format(dd.name))
 
 def main():
 
