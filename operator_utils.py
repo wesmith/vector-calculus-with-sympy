@@ -50,33 +50,52 @@ def undo_abs(obj):
 
 def pp(val):  # WS version of pretty-print
     # simplify each element of the object if applyfunc is supported by the object
+    #if 'applyfunc' in dir(val):
+    #    val = val.applyfunc(sy.simplify)
+    #else:
+    #    val = val.simplify()
+    #return display(Math(sy.latex(val)))
+    return display(Math(sy.latex(simp(val))))
+
+
+def simp(val):  # WS helper for WS version of pretty print
     if 'applyfunc' in dir(val):
         val = val.applyfunc(sy.simplify)
-    else:
+    elif 'simplify' in dir(val):
         val = val.simplify()
-    return display(Math(sy.latex(val)))
+    return val
 
 
-def latex_block(rhs, title=None, lhs=None):
+def latex_block(rhs, title=None, lhs=None, center=True, h_title=1, h_eq=4):
     '''
     Print a title, left-hand side of equation, 
     right-hand side of equation, in LaTex.
     title: string (optional)
     rhs:   sympy object that is compatible with sympy.latex() (required)
     lhs:   sympy object that is compatible with sympy.latex() (optional)
+    h_title: int to specify size of title (1 largest, 2 smaller, etc.)
+    h_eq:    int to specify size of equation (ditto)
     '''
-    rhs = sp.latex(rhs)
-    if lhs is not None: lhs = sp.latex(lhs)
+    rhs = sy.latex(rhs)
+    if lhs is not None: lhs = sy.latex(lhs)
+    
+    f1 = '<center>'
+    f2 = '$$'
+    if not center: 
+        f1 = ''
+        f2 = '$'
+    ht = '#' * h_title
+    he = '#' * h_eq
     
     if title is None:
         if lhs is None:
-            txt = '#### $$ {} $$'.format(rhs)
+            txt = '{} {} {} {}'.format(he, f2, rhs, f2)
         else:
-            txt = '#### $$ {} = {} $$'.format(lhs, rhs)
+            txt = '{} {} {} = {} {}'.format(he, f2, lhs, rhs, f2)
     elif lhs is None:
-        txt = '# {} \n#### $$ {} $$'.format(title, rhs)
+        txt = '{} {} {}\n{} {} {} {}'.format(ht, f1, title, he, f2, rhs, f2)
     else:
-        txt = '# {} \n#### $$ {} = {} $$'.format(title, lhs, rhs)
+        txt = '{} {} {}\n{} {} {} = {} {}'.format(ht, f1, title, he, f2, lhs, rhs, f2)
     return Markdown(txt)
 
 
