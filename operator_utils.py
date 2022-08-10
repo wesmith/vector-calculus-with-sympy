@@ -26,7 +26,7 @@ import sympy as sy
 import numpy as np
 import matplotlib.pyplot as plt
 from   sympy import sin, cos, latex
-from   IPython.display import display, Math
+from   IPython.display import display, Math, Markdown
 
 
 def undo_abs(obj): 
@@ -55,6 +55,29 @@ def pp(val):  # WS version of pretty-print
     else:
         val = val.simplify()
     return display(Math(sy.latex(val)))
+
+
+def latex_block(rhs, title=None, lhs=None):
+    '''
+    Print a title, left-hand side of equation, 
+    right-hand side of equation, in LaTex.
+    title: string (optional)
+    rhs:   sympy object that is compatible with sympy.latex() (required)
+    lhs:   sympy object that is compatible with sympy.latex() (optional)
+    '''
+    rhs = sp.latex(rhs)
+    if lhs is not None: lhs = sp.latex(lhs)
+    
+    if title is None:
+        if lhs is None:
+            txt = '#### $$ {} $$'.format(rhs)
+        else:
+            txt = '#### $$ {} = {} $$'.format(lhs, rhs)
+    elif lhs is None:
+        txt = '# {} \n#### $$ {} $$'.format(title, rhs)
+    else:
+        txt = '# {} \n#### $$ {} = {} $$'.format(title, lhs, rhs)
+    return Markdown(txt)
 
 
 class Operators:
