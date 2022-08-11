@@ -66,6 +66,11 @@ def simp(val):  # WS helper for WS version of pretty print
     return val
 
 
+def test_markdown(tt='Hello', hh=1):
+    txt = '<h{}><center> {} </center></h{}>'.format(hh, tt, hh)
+    return Markdown(txt)
+
+
 def latex_block(rhs, title=None, lhs=None, center=True, h_title=1, h_eq=4):
     '''
     Print a title, left-hand side of equation, 
