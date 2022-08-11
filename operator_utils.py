@@ -79,11 +79,13 @@ def latex_block(rhs, title=None, lhs=None, center=True, h_title=1, h_eq=4):
     rhs = sy.latex(rhs)
     if lhs is not None: lhs = sy.latex(lhs)
     
-    f1 = '<center>'
-    f2 = '$$'
+    f11 = '<center>'
+    f12 = '</center>'
+    f2  = '$$'
     if not center: 
-        f1 = ''
-        f2 = '$'
+        f11 = ''
+        f12 = ''
+        f2  = '$'
     ht = '#' * h_title
     he = '#' * h_eq
     
@@ -93,9 +95,9 @@ def latex_block(rhs, title=None, lhs=None, center=True, h_title=1, h_eq=4):
         else:
             txt = '{} {} {} = {} {}'.format(he, f2, lhs, rhs, f2)
     elif lhs is None:
-        txt = '{} {} {}\n{} {} {} {}'.format(ht, f1, title, he, f2, rhs, f2)
+        txt = '{} {} {} {}\n{} {} {} {}'.format(ht, f11, title, f12, he, f2, rhs, f2)
     else:
-        txt = '{} {} {}\n{} {} {} = {} {}'.format(ht, f1, title, he, f2, lhs, rhs, f2)
+        txt = '{} {} {} {}\n{} {} {} = {} {}'.format(ht, f11, title, f12, he, f2, lhs, rhs, f2)
     return Markdown(txt)
 
 
