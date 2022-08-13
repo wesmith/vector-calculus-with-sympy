@@ -49,16 +49,11 @@ def undo_abs(obj):
 
 
 def pp(val):  # WS version of pretty-print
-    # simplify each element of the object if applyfunc is supported by the object
-    #if 'applyfunc' in dir(val):
-    #    val = val.applyfunc(sy.simplify)
-    #else:
-    #    val = val.simplify()
-    #return display(Math(sy.latex(val)))
     return display(Math(sy.latex(simp(val))))
 
 
 def simp(val):  # WS helper for WS version of pretty print
+    # simplify each element of the object if applyfunc is supported by the object
     if 'applyfunc' in dir(val):
         val = val.applyfunc(sy.simplify)
     elif 'simplify' in dir(val):
