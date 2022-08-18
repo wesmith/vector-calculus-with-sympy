@@ -180,6 +180,12 @@ class Operators:
         pp = ['\\hat{\\mathbf{e_' + sy.latex(k) + '}}' for k in self.coords_p]
         self.Zp = sy.Matrix(sy.symbols(pp))
 
+        # symbolic gradient
+        self._gradient = sy.symbols('\\nabla', cls=sy.Function)
+
+        # symbolic divergence: TODO: get 'nabla dot' to properly print
+        self._divergence = sy.symbols('DIV', cls=sy.Function)
+
         # symbolic Laplacian operator
         self._Laplacian = sy.symbols('\\nabla^{2}', cls=sy.Function)
         
@@ -245,10 +251,18 @@ class Operators:
         M = self._J * self.metric_inv_sqrt
         return M.T * self.Z
 
-    def Laplacian_symbolic(self, coords):
+    def gradient_symbolic(self, fn):
+        if fn == 0: return 0
+        return self._gradient(fn)
+
+    def divergence_symbolic(self, fn):
+        if fn == 0: return 0
+        return self._divergence(fn)
+
+    def Laplacian_symbolic(self, fn):
         # symbolic representation of Laplacian
-        if coords == 0: return 0
-        return self._Laplacian(coords)
+        if fn == 0: return 0  # this is temporary
+        return self._Laplacian(fn)
     
     def gradient(self, F=None, vector=True):
         # F is a scalar field in the primed coordinates;
