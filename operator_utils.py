@@ -181,13 +181,16 @@ class Operators:
         self.Zp = sy.Matrix(sy.symbols(pp))
 
         # symbolic gradient
-        self._gradient = sy.symbols('\\nabla', cls=sy.Function)
+        self._gradient   = sy.symbols('\\nabla', cls=sy.Function)
 
-        # symbolic divergence: TODO: get 'nabla dot' to properly print
-        self._divergence = sy.symbols('DIV', cls=sy.Function)
+        # symbolic divergence
+        self._divergence = sy.symbols('\\nabla\\bullet', cls=sy.Function)
+
+        # symbolic curl
+        self._curl       = sy.symbols('\\nabla\\times', cls=sy.Function)
 
         # symbolic Laplacian operator
-        self._Laplacian = sy.symbols('\\nabla^{2}', cls=sy.Function)
+        self._Laplacian  = sy.symbols('\\nabla^{2}', cls=sy.Function)
         
     def _scalar_field(self, F='F'):
         # create a generic scalar field with user-defined symbol F
@@ -252,18 +255,17 @@ class Operators:
         return M.T * self.Z
 
     def gradient_symbolic(self, fn):
-        if fn == 0: return 0
         return self._gradient(fn)
 
     def divergence_symbolic(self, fn):
-        if fn == 0: return 0
         return self._divergence(fn)
 
+    def curl_symbolic(self, fn):
+        return self._curl(fn)
+
     def Laplacian_symbolic(self, fn):
-        # symbolic representation of Laplacian
-        if fn == 0: return 0  # this is temporary
         return self._Laplacian(fn)
-    
+
     def gradient(self, F=None, vector=True):
         # F is a scalar field in the primed coordinates;
         # default is a symbolic scalar field
